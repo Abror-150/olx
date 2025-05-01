@@ -26,7 +26,7 @@ export class LikeService {
         where: { productId, userId },
       });
       if (existingLike) {
-        throw new BadRequestException('Bu mahsulotga allaqachon like bosilgan');
+        return { message: 'like already exists' };
       }
 
       const like = await this.prisma.like.create({

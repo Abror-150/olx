@@ -7,16 +7,18 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ColorService } from './color.service';
 import { CreateColorDto } from './dto/create-color.dto';
 import { UpdateColorDto } from './dto/update-color.dto';
 import { ApiQuery } from '@nestjs/swagger';
+import { AuthGuard } from 'src/user/auth/auth.guard';
 
 @Controller('color')
 export class ColorController {
   constructor(private readonly colorService: ColorService) {}
-
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createColorDto: CreateColorDto) {
     return this.colorService.create(createColorDto);

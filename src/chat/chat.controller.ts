@@ -15,15 +15,19 @@ import { UpdateChatDto } from './dto/update-chat.dto';
 import { Request } from 'express';
 import { AuthGuard } from 'src/user/auth/auth.guard';
 import { chatMessageDto } from './dto/create-chatMessage.dto';
+import { userRole } from '@prisma/client';
 
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
-
+  @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createChatDto: CreateChatDto) {
-    return this.chatService.createChat(createChatDto);
+  create(@Body() createChatDto: CreateChatDto, @Req() req: Request) {
+    const userId = req['user-id'];
+
+    return this.chatService.createChat(createChatDto, userId);
   }
+
   @UseGuards(AuthGuard)
   @Get()
   findAll(@Req() req: Request) {
@@ -35,9 +39,13 @@ export class ChatController {
   remove(@Param('id') id: string) {
     return this.chatService.deleteChat(id);
   }
+  @UseGuards(AuthGuard)
   @Post('message')
-  createMessage(@Body() data: chatMessageDto) {
-    return this.chatService.createMessage(data);
+  createMessage(@Body() data: chatMessageDto, @Req() req: Request) {
+    const userId = req['user-id'];
+    console.log(userId);
+
+    return this.chatService.createMessage(data, userId);
   }
   @Get('message/:id')
   getMessagee(@Param('id') id: string) {

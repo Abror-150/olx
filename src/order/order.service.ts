@@ -7,11 +7,24 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { count, log } from 'console';
+import { find } from 'rxjs';
 
 @Injectable()
 export class OrderService {
   constructor(private prisma: PrismaService) {}
   async createOrder(createOrderDto: CreateOrderDto, userId: string) {
+    let findColor = await this.prisma.color.findFirst({
+      where: { id: createOrderDto.colorId },
+    });
+    if (!findColor) {
+      throw new NotFoundException('color not found');
+    }
+    let findProduct = await this.prisma.product.findFirst({
+      where: { id: createOrderDto.productId },
+    });
+    if (!findProduct) {
+      throw new NotFoundException('product not found');
+    }
     try {
       const orderr = await this.prisma.order.create({
         data: {
@@ -21,6 +34,7 @@ export class OrderService {
           userId: userId,
           productId: createOrderDto.productId,
         },
+        include: { user: true, product: true, color: true },
       });
       return orderr;
     } catch (error) {
@@ -93,10 +107,10 @@ export class OrderService {
   }
 
   async myAds(userId: string) {
-    const orders = await this.prisma.order.findMany({
+    const orders = await this.prisma.product.findMany({
       where: { userId },
       include: {
-        product: true,
+        category: true,
         user: true,
         color: true,
       },
@@ -106,12 +120,18 @@ export class OrderService {
       throw new NotFoundException('Sizning elonlaringiz topilmadi');
     }
 
-    return orders.map((order) => order.product);
+    return orders;
   }
 
   async getOrderById(orderId: string) {
+    const findOrder = await this.prisma.order.findFirst({
+      where: { id: orderId },
+    });
+    if (!findOrder) {
+      throw new NotFoundException('order not found');
+    }
     try {
-      const order = await this.prisma.order.findUnique({
+      const order = await this.prisma.order.findFirst({
         where: { id: orderId },
         include: {
           color: true,
@@ -128,11 +148,28 @@ export class OrderService {
     } catch (error) {}
   }
 
-  update(id: string, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
+  async update(id: string, updateOrderDto: UpdateOrderDto) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: updateOrderDto,
+    });
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} order`;
+  async remove(id: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    await this.prisma.order.delete({
+      where: { id },
+    });
+
+    return { message: `Order with ID ${id} has been deleted` };
   }
 }

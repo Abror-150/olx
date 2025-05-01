@@ -6,12 +6,19 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { Type } from '@prisma/client';
 
 @Injectable()
 export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
+    let category = await this.prisma.category.findFirst({
+      where: { name: createCategoryDto.name },
+    });
+    if (category) {
+      throw new BadRequestException('category already exists');
+    }
     try {
       return await this.prisma.category.create({ data: createCategoryDto });
     } catch (error) {
@@ -25,6 +32,7 @@ export class CategoryService {
     order?: 'asc' | 'desc';
     page?: number;
     limit?: number;
+    type?: Type;
   }) {
     const {
       search,
@@ -32,6 +40,7 @@ export class CategoryService {
       order = 'asc',
       page = 1,
       limit = 10,
+      type,
     } = query;
 
     const where: any = {};
@@ -41,6 +50,10 @@ export class CategoryService {
         contains: search,
         mode: 'insensitive',
       };
+    }
+
+    if (type) {
+      where.type = type;
     }
 
     const categories = await this.prisma.category.findMany({

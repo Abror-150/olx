@@ -5,10 +5,5 @@ export class CreateChatDto {
   @ApiProperty()
   @IsUUID()
   @IsNotEmpty()
-  fromId: string;
-
-  @ApiProperty()
-  @IsUUID()
-  @IsNotEmpty()
   toId: string;
 }

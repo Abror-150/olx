@@ -19,20 +19,20 @@ import { AuthGuard } from 'src/user/auth/auth.guard';
 export class LikeController {
   constructor(private readonly likeService: LikeService) {}
 
-  @Post()
   @UseGuards(AuthGuard)
+  @Post()
   create(@Body() createLikeDto: CreateLikeDto, @Req() req: Request) {
     const userId = req['user-id'];
 
     return this.likeService.create(createLikeDto, userId);
   }
-  @Get('liked')
   @UseGuards(AuthGuard)
+  @Get('liked')
   getLikedProducts(@Req() req) {
     const userId = req['user-id'];
     return this.likeService.getLikedProductsByUser(userId);
   }
-
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: Request) {
     const userId = req['user-id'];

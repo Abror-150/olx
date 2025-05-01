@@ -11,27 +11,48 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createProductDto: CreateProductDto) {
-    const { colorIds, ...rest } = createProductDto;
+  async create(data: CreateProductDto, userId: string) {
+    const { price, discount, colorIds, ...rest } = data;
+    const discountValue = Number(discount) || 0;
+
     try {
+      const finalPrice =
+        discountValue > 0 ? price - (price * discountValue) / 100 : price;
+
       const product = await this.prisma.product.create({
         data: {
           ...rest,
+          price: finalPrice,
+          discount: discountValue,
+          userId: userId,
           ...(colorIds && colorIds.length
             ? { color: { connect: colorIds.map((id) => ({ id })) } }
             : {}),
         },
-        include: { color: true },
+        include: { user: true, color: true },
       });
+
       return product;
-    } catch (error: any) {
-      if (error.code === 'P2003') {
-        throw new BadRequestException('Invalid categoryId or colorIds');
-      }
-      throw error;
+    } catch (err) {
+      throw new BadRequestException(err.message);
     }
   }
+  async myAds(userId: string) {
+    const orders = await this.prisma.product.findMany({
+      where: { userId },
+      include: {
+        category: true,
+        user: true,
+      },
+    });
+    console.log(orders);
 
+    if (orders.length === 0) {
+      throw new NotFoundException('Sizning elonlaringiz topilmadi');
+    }
+
+    return orders;
+  }
   async findAll(query: {
     name?: string;
     colorId?: string;
@@ -93,7 +114,7 @@ export class ProductService {
     return { total, page, limit, products };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const product = await this.prisma.product.findFirst({
       where: { id },
       include: {
@@ -103,19 +124,45 @@ export class ProductService {
         like: true,
       },
     });
+
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
+
+    if (userId) {
+      const alreadyViewed = await this.prisma.view.findFirst({
+        where: {
+          userId,
+          productId: id,
+        },
+      });
+
+      if (!alreadyViewed) {
+        await this.prisma.view.create({
+          data: {
+            userId,
+            productId: id,
+          },
+        });
+      }
+    }
+
     const comments = product.comment;
     const totalStars = comments.reduce(
       (sum, comment) => sum + (comment.star || 0),
       0,
     );
     const averageStar = comments.length > 0 ? totalStars / comments.length : 0;
+
     const viewCount = await this.prisma.view.count({
       where: { productId: id },
     });
-    return { ...product, viewCount, averageStar: +averageStar.toFixed(1) };
+
+    return {
+      ...product,
+      viewCount,
+      averageStar: +averageStar.toFixed(1),
+    };
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {

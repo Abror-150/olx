@@ -22,6 +22,11 @@ import { UserQueryDto } from './dto/changed.user.Query.dto copy';
 import { log } from 'console';
 import { Request } from 'express';
 import { RefreshTokendDto } from './dto/changed.user.dtoRefresh';
+import { CreateAdminDto } from './dto/changed.user.dtoAdmin';
+import { RoleGuard } from './auth/role.guard';
+import { Rolee, ROLES_KEY } from './decarator/dec';
+import { userRole } from '@prisma/client';
+import { adminRole } from './adminRole/adminrole.enum';
 
 @Controller('user')
 export class UserController {
@@ -78,5 +83,18 @@ export class UserController {
   async changePassword(@Req() req: Request, @Body() dto: ChangePasswordDto) {
     const userId = req['user-id'];
     return this.userService.changePassword(userId, dto);
+  }
+  @Rolee(adminRole.ADMIN, userRole.SUPER_ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
+  @Post('add/admin')
+  async CreateAdmin(@Body() data: CreateAdminDto) {
+    return this.userService.createAdmin(data);
+  }
+  @UseGuards(AuthGuard)
+  @Delete('admin/:id')
+  async deleteAdmin(@Param('id') id: string, @Req() req: Request) {
+    const currentUserId = req['user-id'];
+    return this.userService.deleteAdmin(id, currentUserId);
   }
 }

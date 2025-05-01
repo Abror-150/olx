@@ -7,19 +7,25 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiQuery } from '@nestjs/swagger';
+import { AuthGuard } from 'src/user/auth/auth.guard';
+import { Request } from 'express';
+import { ViewGuard } from 'src/view/view.guard';
 
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
-
+  @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productService.create(createProductDto);
+  create(@Body() createProductDto: CreateProductDto, @Req() req: Request) {
+    const userId = req['user-id'];
+    return this.productService.create(createProductDto, userId);
   }
 
   @Get()
@@ -84,10 +90,18 @@ export class ProductController {
   findAll(@Query() query: any) {
     return this.productService.findAll(query);
   }
+  @UseGuards(AuthGuard)
+  @Get('myElonlars')
+  async myElons(@Req() req: Request) {
+    const userId = req['user-id'];
 
+    return this.productService.myAds(userId);
+  }
+  @UseGuards(ViewGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productService.findOne(id);
+  findOne(@Param('id') id: string, @Req() req: Request) {
+    const userId = req['user-id'];
+    return this.productService.findOne(id, userId);
   }
 
   @Patch(':id')

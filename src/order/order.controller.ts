@@ -53,12 +53,6 @@ export class OrderController {
 
     return this.orderService.myOrder(userId);
   }
-  @UseGuards(AuthGuard)
-  @Get('myElonlars')
-  async myElons(@Req() req: Request) {
-    const userId = req['user-id'];
-    return this.orderService.myAds(userId);
-  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

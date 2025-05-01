@@ -6,28 +6,23 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ViewService } from './view.service';
-import { Request } from 'express';
 import { CreateViewDto } from './dto/create-view.dto';
+import { UpdateViewDto } from './dto/update-view.dto';
 import { AuthGuard } from 'src/user/auth/auth.guard';
+import { Request } from 'express';
 
 @Controller('view')
 export class ViewController {
   constructor(private readonly viewService: ViewService) {}
 
   @UseGuards(AuthGuard)
-  @Post()
-  async createView(@Body() createViewDto: CreateViewDto, @Req() req: Request) {
-    const userId = req['user-id'];
-    return this.viewService.ViewProduct(createViewDto, userId);
-  }
   @Get('lastViewProduct')
-  @UseGuards(AuthGuard)
-  async lastViewProduct(@Req() req: Request) {
+  findAll(@Req() req: Request) {
     const userId = req['user-id'];
-    return this.viewService.getLastViewedProduct(userId);
+    return this.viewService.lastViewProduct(userId);
   }
 }

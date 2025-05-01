@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Ip,
@@ -20,10 +21,12 @@ import { MailService } from 'src/mail/mail.service';
 import { log } from 'console';
 import { connect } from 'http2';
 import { ChangePasswordDto } from './dto/changed.user.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, userRole } from '@prisma/client';
 import { UserQueryDto } from './dto/changed.user.Query.dto copy';
 import { Request } from 'express';
 import { RefreshTokendDto } from './dto/changed.user.dtoRefresh';
+import { CreateAdminDto } from './dto/changed.user.dtoAdmin';
+import { adminRole } from './adminRole/adminrole.enum';
 @Injectable()
 export class UserService {
   constructor(
@@ -35,6 +38,7 @@ export class UserService {
   async sendEmail(data: emailDto) {
     try {
       let { email } = data;
+      totp.options = { step: 120, digits: 4 };
 
       let otp = totp.generate(email + 'email');
       await this.mail.sendEmail(email, otp, 'otp yuborildi');
@@ -44,6 +48,7 @@ export class UserService {
       return error;
     }
   }
+
   async verifyEmail(data: otpDto) {
     try {
       let { email, otp } = data;
@@ -70,6 +75,10 @@ export class UserService {
       if (user) {
         throw new BadRequestException('user already exists');
       }
+      const region = await this.prisma.region.findFirst({
+        where: { id: data.regionId },
+      });
+      if (!region) throw new NotFoundException('Region topilmadi');
       let hash = bcrypt.hashSync(password, 10);
       let newUser = await this.prisma.user.create({
         data: {
@@ -78,7 +87,7 @@ export class UserService {
           firstName: data.firstName,
           lastName: data.lastName,
           regionId: data.regionId,
-          role: data.role,
+          role: userRole.USER,
           year: data.year,
           img: data.img,
         },
@@ -149,8 +158,6 @@ export class UserService {
       });
 
       if (!userr) {
-        console.log('not');
-
         throw new NotFoundException('Foydalanuvchi topilmadi');
       }
 
@@ -219,8 +226,9 @@ export class UserService {
   }
 
   async findOne(id: string) {
-    const data = await this.prisma.region.findFirst({
+    const data = await this.prisma.user.findFirst({
       where: { id },
+      include: { product: true },
     });
     if (!data) {
       throw new NotFoundException('user not found');
@@ -251,5 +259,58 @@ export class UserService {
       where: { id },
     });
     return { message: `User with id ${id} has been deleted` };
+  }
+
+  async createAdmin(dto: CreateAdminDto) {
+    const region = await this.prisma.region.findFirst({
+      where: { id: dto.regionId },
+    });
+    if (!region) throw new NotFoundException('Region topilmadi');
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    return this.prisma.user.create({
+      data: {
+        firstName: dto.firstName,
+        lastName: dto.firstName,
+        email: dto.email,
+        regionId: dto.regionId,
+        img: dto.img,
+        year: dto.year,
+        password: hashedPassword,
+        role: dto.role,
+      },
+    });
+  }
+  async deleteAdmin(adminId: string, currentUserId: string) {
+    if (adminId === currentUserId) {
+      throw new BadRequestException('Admin o‘zini o‘chira olmaydi');
+    }
+    const userToDelete = await this.prisma.user.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!userToDelete) {
+      throw new NotFoundException('Foydalanuvchi topilmadi');
+    }
+
+    if (userToDelete.role !== adminRole.ADMIN) {
+      throw new BadRequestException(
+        'Faqat admin foydalanuvchilarni o‘chirish mumkin',
+      );
+    }
+
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: currentUserId },
+    });
+
+    if (!currentUser || currentUser.role !== adminRole.ADMIN) {
+      throw new ForbiddenException('Faqat adminlar adminni o‘chira oladi');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: adminId },
+    });
+
+    return { message: 'Admin muvaffaqiyatli o‘chirildi' };
   }
 }

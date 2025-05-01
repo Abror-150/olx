@@ -12,7 +12,9 @@ import {
   MaxLength,
   Max,
   MinLength,
+  Validate,
 } from 'class-validator';
+import { IsAllowedRole } from './userrole..user';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'Ali', description: 'Foydalanuvchining ismi' })
@@ -57,14 +59,6 @@ export class CreateUserDto {
   @IsUUID()
   @IsNotEmpty()
   regionId: string;
-
-  @ApiProperty({
-    enum: userRole,
-    example: userRole.USER,
-    description: 'Foydalanuvchi roli',
-  })
-  @IsEnum(userRole)
-  role: userRole;
 
   @ApiProperty({
     example: 2000,
