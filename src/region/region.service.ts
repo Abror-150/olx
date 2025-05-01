@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRegionDto } from './dto/create-region.dto';
 import { UpdateRegionDto } from './dto/update-region.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class RegionService {
@@ -12,7 +13,40 @@ export class RegionService {
       data: createRegionDto,
     });
   }
+  async exportToExcel(): Promise<Buffer> {
+    try {
+      const regions = await this.prisma.region.findMany();
+      console.log('Fetched regions:', regions);
 
+      if (!regions.length) {
+        throw new NotFoundException('No regions available to export');
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Regions');
+
+      worksheet.columns = [
+        { header: 'ID', key: 'id', width: 30 },
+        { header: 'Name', key: 'name', width: 30 },
+      ];
+
+      regions.forEach((region) => {
+        worksheet.addRow({
+          id: region.id,
+          name: region.name,
+        });
+      });
+
+      const arrayBuffer = await workbook.xlsx.writeBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      console.log('Excel buffer generated successfully'); // Log qo'shish
+
+      return buffer;
+    } catch (error) {
+      console.error('Error in exportToExcel:', error); // Xato logi
+      throw error; // Xatoni controller ga uzatish
+    }
+  }
   async findAll(query: {
     search?: string;
     sortBy?: string;

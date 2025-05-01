@@ -7,6 +7,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Type } from '@prisma/client';
+import * as ExcelJS from 'exceljs';
+import { log } from 'console';
 
 @Injectable()
 export class CategoryService {
@@ -108,6 +110,41 @@ export class CategoryService {
       return { message: `Category with ID ${id} has been deleted` };
     } catch (error) {
       throw new BadRequestException('Failed to delete category');
+    }
+  }
+  async exportToExcel(): Promise<Buffer> {
+    try {
+      const categories = await this.prisma.category.findMany();
+
+      if (!categories.length) {
+        throw new NotFoundException('No categories available to export');
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Categories');
+
+      worksheet.columns = [
+        { header: 'ID', key: 'id', width: 30 },
+        { header: 'Name', key: 'name', width: 30 },
+        { header: 'Description', key: 'description', width: 40 },
+        { header: 'Image', key: 'img', width: 30 },
+      ];
+
+      categories.forEach((cat) => {
+        worksheet.addRow({
+          id: cat.id,
+          name: cat.name,
+          description: cat.type || 'N/A',
+          img: cat.img || 'N/A',
+        });
+      });
+
+      const arrayBuffer = await workbook.xlsx.writeBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      return buffer;
+    } catch (error) {
+      throw error;
     }
   }
 }

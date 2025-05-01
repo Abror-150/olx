@@ -8,28 +8,57 @@ import {
   Delete,
   Query,
   UseGuards,
+  Header,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Type, userRole } from '@prisma/client';
 import { AuthGuard } from 'src/user/auth/auth.guard';
 import { RoleGuard } from 'src/user/auth/role.guard';
 import { Rolee } from 'src/user/decarator/dec';
+import { Response } from 'express';
+import { adminRole } from 'src/user/adminRole/adminrole.enum';
 
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  @Rolee(userRole.ADMIN)
+  @Rolee(adminRole.ADMIN)
   @UseGuards(RoleGuard)
   @UseGuards(AuthGuard)
   @Post()
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
   }
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
+  @Get('export-excel')
+  async exportExcel(@Res() res: Response) {
+    try {
+      const buffer = await this.categoryService.exportToExcel();
 
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=categories_${new Date().toISOString()}.xlsx`,
+      );
+
+      return res.status(HttpStatus.OK).send(buffer);
+    } catch (error) {
+      return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Error exporting categories to Excel',
+        error: error.message,
+      });
+    }
+  }
   @Get()
   @ApiQuery({
     name: 'search',
@@ -69,7 +98,7 @@ export class CategoryController {
   findOne(@Param('id') id: string) {
     return this.categoryService.findOne(id);
   }
-  @Rolee(userRole.ADMIN, userRole.SUPER_ADMIN)
+  @Rolee(adminRole.ADMIN, adminRole.SUPER_ADMIN)
   @UseGuards(RoleGuard)
   @UseGuards(AuthGuard)
   @Patch(':id')
@@ -79,7 +108,7 @@ export class CategoryController {
   ) {
     return this.categoryService.update(id, updateCategoryDto);
   }
-  @Rolee(userRole.ADMIN)
+  @Rolee(adminRole.ADMIN)
   @UseGuards(RoleGuard)
   @UseGuards(AuthGuard)
   @Delete(':id')

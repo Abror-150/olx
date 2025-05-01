@@ -14,6 +14,7 @@ import { LikeModule } from './like/like.module';
 import { OrderModule } from './order/order.module';
 import { ChatModule } from './chat/chat.module';
 import { ViewModule } from './view/view.module';
+import { UploadController } from './upload/upload.controller';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { ViewModule } from './view/view.module';
     ChatModule,
     ViewModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, UploadController],
   providers: [AppService],
 })
 export class AppModule {}

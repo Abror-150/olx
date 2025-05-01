@@ -8,12 +8,18 @@ import {
   Delete,
   Query,
   UseGuards,
+  HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { RegionService } from './region.service';
 import { CreateRegionDto } from './dto/create-region.dto';
 import { UpdateRegionDto } from './dto/update-region.dto';
 import { ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from 'src/user/auth/auth.guard';
+import { Response } from 'express';
+import { adminRole } from 'src/user/adminRole/adminrole.enum';
+import { Rolee } from 'src/user/decarator/dec';
+import { RoleGuard } from 'src/user/auth/role.guard';
 
 @Controller('region')
 export class RegionController {
@@ -22,6 +28,31 @@ export class RegionController {
   @Post()
   create(@Body() createRegionDto: CreateRegionDto) {
     return this.regionService.create(createRegionDto);
+  }
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
+  @Get('export-excel')
+  async exportExcel(@Res() res: Response) {
+    try {
+      const buffer = await this.regionService.exportToExcel();
+
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=regions_${new Date().toISOString()}.xlsx`,
+      );
+
+      return res.status(HttpStatus.OK).send(buffer);
+    } catch (error) {
+      return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Error exporting regions to Excel',
+        error: error.message,
+      });
+    }
   }
 
   @Get()

@@ -6,6 +6,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class ProductService {
@@ -37,6 +38,43 @@ export class ProductService {
       throw new BadRequestException(err.message);
     }
   }
+  async exportToExcel(): Promise<Buffer> {
+    try {
+      const products = await this.prisma.product.findMany();
+      console.log('Fetched products:', products);
+
+      if (!products.length) {
+        throw new NotFoundException('No products available to export');
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Products');
+
+      worksheet.columns = [
+        { header: 'ID', key: 'id', width: 30 },
+        { header: 'Name', key: 'name', width: 30 },
+        { header: 'Price', key: 'price', width: 15 },
+        { header: 'Category', key: 'categoryId', width: 40 },
+      ];
+
+      products.forEach((product) => {
+        worksheet.addRow({
+          id: product.id,
+          name: product.name,
+          price: product.price || 0,
+        });
+      });
+
+      const arrayBuffer = await workbook.xlsx.writeBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      console.log('Excel buffer generated successfully');
+
+      return buffer;
+    } catch (error) {
+      console.error('Error in exportToExcel:', error);
+      throw error;
+    }
+  }
   async myAds(userId: string) {
     const orders = await this.prisma.product.findMany({
       where: { userId },
@@ -45,7 +83,6 @@ export class ProductService {
         user: true,
       },
     });
-    console.log(orders);
 
     if (orders.length === 0) {
       throw new NotFoundException('Sizning elonlaringiz topilmadi');
@@ -53,6 +90,7 @@ export class ProductService {
 
     return orders;
   }
+
   async findAll(query: {
     name?: string;
     colorId?: string;

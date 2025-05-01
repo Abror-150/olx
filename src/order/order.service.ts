@@ -8,6 +8,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { count, log } from 'console';
 import { find } from 'rxjs';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class OrderService {
@@ -41,6 +42,44 @@ export class OrderService {
       console.log(error);
 
       throw new BadRequestException('Order yaratishda xato yuz berdi');
+    }
+  }
+  async exportToExcel(): Promise<Buffer> {
+    try {
+      const orders = await this.prisma.order.findMany();
+
+      if (!orders.length) {
+        throw new NotFoundException('No orders available to export');
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Orders');
+
+      worksheet.columns = [
+        { header: 'ID', key: 'id', width: 30 },
+        { header: 'User ID', key: 'userId', width: 30 },
+        { header: 'Total', key: 'total', width: 15 },
+        { header: 'Status', key: 'status', width: 20 },
+        { header: 'Created At', key: 'createdAt', width: 25 },
+      ];
+
+      orders.forEach((order) => {
+        worksheet.addRow({
+          id: order.id,
+          userId: order.userId || 'N/A',
+          img: order.img || 0,
+          count: order.count || 'N/A',
+          createdAt: order.createdAt ? order.createdAt.toISOString() : 'N/A',
+        });
+      });
+
+      const arrayBuffer = await workbook.xlsx.writeBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      return buffer;
+    } catch (error) {
+      console.error('Error in exportToExcel:', error);
+      throw error;
     }
   }
   async myOrder(userId: string) {
@@ -104,23 +143,6 @@ export class OrderService {
       limit: Number(limit),
       products: sortedProducts,
     };
-  }
-
-  async myAds(userId: string) {
-    const orders = await this.prisma.product.findMany({
-      where: { userId },
-      include: {
-        category: true,
-        user: true,
-        color: true,
-      },
-    });
-
-    if (orders.length === 0) {
-      throw new NotFoundException('Sizning elonlaringiz topilmadi');
-    }
-
-    return orders;
   }
 
   async getOrderById(orderId: string) {

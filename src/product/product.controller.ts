@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   Req,
+  HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -17,6 +19,10 @@ import { ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from 'src/user/auth/auth.guard';
 import { Request } from 'express';
 import { ViewGuard } from 'src/view/view.guard';
+import { Response } from 'express';
+import { RoleGuard } from 'src/user/auth/role.guard';
+import { adminRole } from 'src/user/adminRole/adminrole.enum';
+import { Rolee } from 'src/user/decarator/dec';
 
 @Controller('product')
 export class ProductController {
@@ -27,7 +33,31 @@ export class ProductController {
     const userId = req['user-id'];
     return this.productService.create(createProductDto, userId);
   }
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
+  @Get('export-excel')
+  async asdsdf(@Res() res: Response) {
+    try {
+      const buffer = await this.productService.exportToExcel();
 
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=products_${new Date().toISOString()}.xlsx`,
+      );
+
+      return res.status(HttpStatus.OK).send(buffer);
+    } catch (error) {
+      return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Error exporting products to Excel',
+        error: error.message,
+      });
+    }
+  }
   @Get()
   @ApiQuery({
     name: 'name',

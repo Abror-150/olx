@@ -59,7 +59,9 @@ export class UserController {
   async refreshToken(@Body() data: RefreshTokendDto) {
     return this.userService.refresh(data);
   }
-
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Get()
   findAll(@Query() query: UserQueryDto) {
     return this.userService.findAll(query);
@@ -68,12 +70,16 @@ export class UserController {
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
   }
-
+  @Rolee(adminRole.ADMIN, adminRole.SUPER_ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
-
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
