@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User{
+  id String @id @default(uuid())
+  firstName String
+  lastName String?
+  email String
+  password String
+  region Region @relation(fields: [regionId],references: [id])
+  regionId String
+  role userRole
+  year Int
+  img String? @default("rasm.jpg")
+  createdAt DateTime @default(now())
+  comment Comment[]
+  order Order[]
+  sentChats Chat[]@relation("fromUser")
+  receiveChats Chat[]@relation("ToUser")
+  fromMessage Message[]@relation("fromUser")
+  toMessage Message[]@relation("ToUser")
+  sesion Sesion[]
+  view View[]
+  like Like[]
+}
+
+enum userRole{
+  ADMIN
+  USER
+  SUPER_ADMIN
+}
+
+model Region{
+  id String @id @default(uuid())
+  name String
+  createdAt DateTime @default(now())
+  user User[]
+
+}
+
+model Category{
+  id String @id @default(uuid())
+  name String
+  img String
+  type Type
+  product Product[]
+
+}
+enum Type{
+  Phone
+  Electronics
+  LAPTOPS
+  Accessories
+}
+
+model Product{
+  id String @id @default(uuid())
+  name String
+  category Category @relation(fields: [categoryId],references: [id])
+  categoryId String
+  price Int
+  img String
+  status productStatus
+  type Type
+  discount Int?
+  describtion String
+  createdAt DateTime @default(now())
+  comment Comment[]
+  order Order[]
+  view View[]
+  like Like[]
+  color Color[] @relation("ProductColor")
+}
+enum productStatus{
+  PENDING
+  USED
+  OLD
+  NEW
+}
+model Comment{
+  id String @id @default(uuid())
+  message String
+  user User @relation(fields: [userId],references: [id])
+  userId String
+  product Product @relation(fields: [productId],references: [id])
+  productId String
+  star Int @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Order{
+  id String @id @default(uuid())
+  img String
+  color Color @relation(fields: [colorId],references: [id])
+  colorId String
+  count Int
+  user User @relation(fields: [userId],references: [id])
+  userId String
+  product Product @relation(fields: [productId],references: [id])
+  productId String
+  createdAt DateTime @default(now())
+}
+
+model Color{
+  id String @id @default(uuid())
+  name String
+  createdAt DateTime @default(now())
+  order Order[]
+  product Product[] @relation("ProductColor")
+
+
+}
+
+model Chat{
+  id String @id @default(uuid())
+  from User @relation("fromUser",fields: [fromId],references: [id])
+  fromId String
+  to User @relation("ToUser",fields: [toId],references: [id])
+  toId String
+  message Message[]
+}
+model Message{
+  id String @id @default(uuid())
+  text String
+  from User @relation("fromUser",fields: [fromId],references: [id])
+  fromId String
+  to User @relation("ToUser",fields: [toId],references: [id])
+  toId String
+  chat Chat @relation(fields: [chatId],references: [id])
+  chatId String
+  createdAt DateTime @default(now())
+}
+
+
+model Sesion{
+  id String @id @default(uuid())
+  user User @relation(fields: [userId],references: [id])
+  userId String
+  device String
+  ip String
+  createdAt DateTime @default(now())
+}
+
+
+model View {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String
+  createdAt  DateTime @default(now())
+}
+
+model Like{
+  id   String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String
+}
+
+
