@@ -9,18 +9,18 @@ export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
   async createChat(data: CreateChatDto, userId: string) {
     try {
-      // const existingChat = await this.prisma.chat.findFirst({
-      //   where: {
-      //     OR: [
-      //       { fromId: data.fromId, toId: data.toId },
-      //       { fromId: data.toId, toId: data.fromId },
-      //     ],
-      //   },
-      // });
+      const existingChat = await this.prisma.chat.findFirst({
+        where: {
+          OR: [
+            { fromId: userId, toId: data.toId },
+            { fromId: data.toId, toId: userId },
+          ],
+        },
+      });
 
-      // if (existingChat) {
-      //   return { message: 'already chat exists' };
-      // }
+      if (existingChat) {
+        return { message: 'already chat exists' };
+      }
 
       let creadChat = await this.prisma.chat.create({
         data: { ...data, fromId: userId },

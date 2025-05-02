@@ -19,7 +19,7 @@ export class LikeService {
         where: { id: productId },
       });
       if (!product) {
-        throw new NotFoundException('Mahsulot topilmadi');
+        return { message: 'product not found' };
       }
 
       const existingLike = await this.prisma.like.findFirst({

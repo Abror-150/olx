@@ -12,7 +12,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 import { CreateUserLoginDto } from './dto/create-user.dtoLogin. copy';
 import { totp } from 'otplib';
 import { otpDto } from './dto/create-user.dtootp copy';
@@ -141,12 +141,17 @@ export class UserService {
   }
   async refresh(data: RefreshTokendDto) {
     try {
+      if (!data.refreshToken) {
+        return { message: 'refresh token wrong ' };
+      }
       let user = this.jwt.verify(data.refreshToken);
 
       const newAccestoken = this.jwt.sign({ id: user.id, role: user.role });
       return { newAccestoken };
     } catch (error) {
-      throw new InternalServerErrorException('internal server error');
+      if (error instanceof JsonWebTokenError) {
+        throw new UnauthorizedException('Refresh token yaroqsiz');
+      }
     }
   }
   async me(userId: string) {
