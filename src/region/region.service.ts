@@ -1,13 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UseGuards } from '@nestjs/common';
 import { CreateRegionDto } from './dto/create-region.dto';
 import { UpdateRegionDto } from './dto/update-region.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
+import { adminRole } from 'src/user/adminRole/adminrole.enum';
+import { RoleGuard } from 'src/user/auth/role.guard';
+import { AuthGuard } from 'src/user/auth/auth.guard';
+import { Rolee } from 'src/user/decarator/dec';
 
 @Injectable()
 export class RegionService {
   constructor(private prisma: PrismaService) {}
-
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   async create(createRegionDto: CreateRegionDto) {
     return this.prisma.region.create({
       data: createRegionDto,
@@ -39,12 +45,12 @@ export class RegionService {
 
       const arrayBuffer = await workbook.xlsx.writeBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      console.log('Excel buffer generated successfully'); // Log qo'shish
+      console.log('Excel buffer generated successfully');
 
       return buffer;
     } catch (error) {
-      console.error('Error in exportToExcel:', error); // Xato logi
-      throw error; // Xatoni controller ga uzatish
+      console.error('Error in exportToExcel:', error);
+      throw error;
     }
   }
   async findAll(query: {
@@ -95,7 +101,9 @@ export class RegionService {
     }
     return region;
   }
-
+  @Rolee(adminRole.ADMIN, adminRole.SUPER_ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   async update(id: string, updateRegionDto: UpdateRegionDto) {
     const region = await this.prisma.region.findFirst({ where: { id } });
 
@@ -107,7 +115,9 @@ export class RegionService {
       data: updateRegionDto,
     });
   }
-
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   async remove(id: string) {
     return this.prisma.region.delete({
       where: { id },

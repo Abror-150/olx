@@ -17,15 +17,7 @@ import { AuthGuard } from 'src/user/auth/auth.guard';
 @Controller('sesion')
 export class SesionController {
   constructor(private readonly sesionService: SesionService) {}
-  @Rolee(adminRole.ADMIN)
-  @UseGuards(RoleGuard)
-  @UseGuards(AuthGuard)
-  @Get()
-  findAll() {
-    return this.sesionService.findAll();
-  }
-  @Rolee(adminRole.ADMIN)
-  @UseGuards(RoleGuard)
+
   @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {

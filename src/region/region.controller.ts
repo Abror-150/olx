@@ -20,17 +20,19 @@ import { Response } from 'express';
 import { adminRole } from 'src/user/adminRole/adminrole.enum';
 import { Rolee } from 'src/user/decarator/dec';
 import { RoleGuard } from 'src/user/auth/role.guard';
+import { userRole } from '@prisma/client';
 
 @Controller('region')
 export class RegionController {
   constructor(private readonly regionService: RegionService) {}
-  // @UseGuards(AuthGuard)
+
+  @Rolee(userRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createRegionDto: CreateRegionDto) {
     return this.regionService.create(createRegionDto);
   }
-  @Rolee(adminRole.ADMIN)
-  @UseGuards(RoleGuard)
   @UseGuards(AuthGuard)
   @Get('export-excel')
   async exportExcel(@Res() res: Response) {

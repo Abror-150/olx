@@ -35,7 +35,6 @@ export class OrderService {
           userId: userId,
           productId: createOrderDto.productId,
         },
-        include: { user: true, product: true, color: true },
       });
       return orderr;
     } catch (error) {

@@ -33,8 +33,6 @@ export class ProductController {
     const userId = req['user-id'];
     return this.productService.create(createProductDto, userId);
   }
-  @Rolee(adminRole.ADMIN)
-  @UseGuards(RoleGuard)
   @UseGuards(AuthGuard)
   @Get('export-excel')
   async asdsdf(@Res() res: Response) {
@@ -66,16 +64,16 @@ export class ProductController {
     description: 'Search by product name',
   })
   @ApiQuery({
-    name: 'colorId',
-    required: false,
-    type: String,
-    description: 'Filter by color ID',
-  })
-  @ApiQuery({
     name: 'status',
     required: false,
     enum: ['USED', 'PENDING', 'OLD', 'NEW'],
     description: 'Filter by status',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['LAPTOPS', 'Phone', 'Electronics', 'Accessories'],
+    description: 'Filter by type',
   })
   @ApiQuery({
     name: 'from',
@@ -133,7 +131,6 @@ export class ProductController {
     const userId = req['user-id'];
     return this.productService.findOne(id, userId);
   }
-
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productService.update(id, updateProductDto);

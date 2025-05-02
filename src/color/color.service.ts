@@ -54,9 +54,7 @@ export class ColorService {
       orderBy: {
         [sortBy]: order,
       },
-      include: {
-        product: true,
-      },
+
       skip: Number(page - 1) * Number(limit),
       take: Number(limit),
     });

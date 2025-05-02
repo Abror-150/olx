@@ -14,16 +14,22 @@ import { CreateColorDto } from './dto/create-color.dto';
 import { UpdateColorDto } from './dto/update-color.dto';
 import { ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from 'src/user/auth/auth.guard';
+import { RoleGuard } from 'src/user/auth/role.guard';
+import { Rolee } from 'src/user/decarator/dec';
+import { adminRole } from 'src/user/adminRole/adminrole.enum';
+import { userRole } from '@prisma/client';
 
 @Controller('color')
 export class ColorController {
   constructor(private readonly colorService: ColorService) {}
+
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
   @UseGuards(AuthGuard)
   @Post()
   create(@Body() createColorDto: CreateColorDto) {
     return this.colorService.create(createColorDto);
   }
-
   @Get()
   @ApiQuery({
     name: 'search',
@@ -62,12 +68,16 @@ export class ColorController {
   findOne(@Param('id') id: string) {
     return this.colorService.findOne(id);
   }
-
+  @Rolee(adminRole.ADMIN, adminRole.SUPER_ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateColorDto: UpdateColorDto) {
     return this.colorService.update(id, updateColorDto);
   }
-
+  @Rolee(adminRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.colorService.remove(id);

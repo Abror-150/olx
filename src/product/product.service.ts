@@ -7,6 +7,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import * as ExcelJS from 'exceljs';
+import { Type } from '@prisma/client';
 
 @Injectable()
 export class ProductService {
@@ -30,7 +31,6 @@ export class ProductService {
             ? { color: { connect: colorIds.map((id) => ({ id })) } }
             : {}),
         },
-        include: { user: true, color: true },
       });
 
       return product;
@@ -90,12 +90,11 @@ export class ProductService {
 
     return orders;
   }
-
   async findAll(query: {
     name?: string;
-    colorId?: string;
     status?: 'USED' | 'OLD' | 'NEW' | 'PENDING';
     from?: number;
+    Type?: 'ELECTRONIC' | 'LAPTOPS' | 'FOOD';
     to?: number;
     sortBy?: string;
     order?: 'asc' | 'desc';
@@ -104,8 +103,8 @@ export class ProductService {
   }) {
     const {
       name,
-      colorId,
       status,
+      Type,
       from,
       to,
       sortBy = 'createdAt',
@@ -122,8 +121,8 @@ export class ProductService {
         mode: 'insensitive',
       };
     }
-
-    if (colorId) where.colorId = colorId;
+    if (status) where.status = status;
+    if (Type) where.type = Type;
     if (status) where.status = status;
 
     if (from || to) {
@@ -134,6 +133,7 @@ export class ProductService {
 
     const products = await this.prisma.product.findMany({
       where,
+
       orderBy: {
         [sortBy]: order,
       },

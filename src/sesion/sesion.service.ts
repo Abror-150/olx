@@ -10,14 +10,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class SesionService {
   constructor(private prisma: PrismaService) {}
-  async findAll() {
-    try {
-      let data = await this.prisma.sesion.findMany({ include: { user: true } });
-      return data;
-    } catch (error) {
-      throw new BadRequestException('bad request');
-    }
-  }
 
   async remove(id: string) {
     try {
