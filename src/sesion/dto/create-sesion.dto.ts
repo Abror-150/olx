@@ -1,1 +1,3 @@
-export class CreateSesionDto {}
+export class CreateSesionDto {
+    
+}

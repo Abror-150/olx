@@ -23,7 +23,6 @@ export class LikeController {
   @Post()
   create(@Body() createLikeDto: CreateLikeDto, @Req() req: Request) {
     const userId = req['user-id'];
-
     return this.likeService.create(createLikeDto, userId);
   }
   @UseGuards(AuthGuard)

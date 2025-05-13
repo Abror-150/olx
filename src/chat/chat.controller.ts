@@ -43,7 +43,6 @@ export class ChatController {
   @Post('message')
   createMessage(@Body() data: chatMessageDto, @Req() req: Request) {
     const userId = req['user-id'];
-    console.log(userId);
 
     return this.chatService.createMessage(data, userId);
   }

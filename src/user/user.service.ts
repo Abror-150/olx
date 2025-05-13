@@ -42,8 +42,7 @@ export class UserService {
 
       let otp = totp.generate(email + 'email');
       await this.mail.sendEmail(email, otp, 'otp yuborildi');
-      let e = 'emailga yuborildi';
-      return { e };
+      return { message: 'emailga yuborildi' };
     } catch (error) {
       return error;
     }
