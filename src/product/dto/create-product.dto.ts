@@ -1,6 +1,6 @@
 // src/product/dto/create-product.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type as ProductType, productStatus } from '@prisma/client';
+import { Type as Type, productStatus } from '@prisma/client';
 import {
   IsString,
   IsNotEmpty,
@@ -51,12 +51,12 @@ export class CreateProductDto {
   status: productStatus;
 
   @ApiProperty({
-    enum: ProductType,
-    example: ProductType.Phone,
+    enum: Type,
+    example: Type.Phone,
     description: 'Mahsulot turi',
   })
-  @IsEnum(ProductType)
-  type: ProductType;
+  @IsEnum(Type)
+  type: Type;
 
   @ApiPropertyOptional({ example: 10, description: 'Chegirma foizi (0–100)' })
   @IsOptional()
